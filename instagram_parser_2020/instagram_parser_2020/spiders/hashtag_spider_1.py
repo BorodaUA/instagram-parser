@@ -49,9 +49,10 @@ class HashtagSpider1Spider(scrapy.Spider):
         newest_posts = dict_response['graphql']['hashtag']['edge_hashtag_to_media']['edges']
         for user in newest_posts:
             result_dict = {}
+            short_code = user['node']['shortcode']
             result_dict['hashtag_name'] = dict_response['graphql']['hashtag']['name']
             result_dict['owner_id'] = user['node']['owner']['id']
-            result_dict['short_code'] = user['node']['shortcode']
+            result_dict['short_code'] = short_code
             result_dict['likes_count'] = user['node']['edge_liked_by']['count']
             result_dict['comments_count'] = user['node']['edge_media_to_comment']['count']
             result_dict['post_description'] = user['node']['edge_media_to_caption']['edges'][0]['node']['text']
@@ -87,7 +88,7 @@ class HashtagSpider1Spider(scrapy.Spider):
             short_code = user['node']['shortcode']
             result_dict['hashtag_name'] = dict_response['data']['hashtag']['name']
             result_dict['owner_id'] = user['node']['owner']['id']
-            result_dict['short_code'] = user['node']['shortcode']
+            result_dict['short_code'] = short_code
             result_dict['likes_count'] = user['node']['edge_liked_by']['count']
             result_dict['comments_count'] = user['node']['edge_media_to_comment']['count']
             try:
@@ -119,7 +120,6 @@ class HashtagSpider1Spider(scrapy.Spider):
         if next_page != False:
             yield get_next_tags_request
 
-        #elif next_page == False:
         hashtag_df = pd.DataFrame(self.result_lst)
         hashtag_df['owner_id'] = hashtag_df['owner_id'].astype('int64')
         hashtag_df['hashtag_name'] = hashtag_df['hashtag_name'].astype('category')
