@@ -17,7 +17,6 @@ class HashtagSpider1Spider(scrapy.Spider):
     
     def __init__(self):
         self.result_lst = []
-        self.today_date = date.today()
         
         
     def start_requests(self):
@@ -33,7 +32,7 @@ class HashtagSpider1Spider(scrapy.Spider):
     def parse(self, response):
         dict_response = json.loads(response.body_as_unicode())
         hashtag_name = dict_response['graphql']['hashtag']['name']
-        
+
         top_posts = dict_response['graphql']['hashtag']['edge_hashtag_to_top_posts']['edges']
         for user in top_posts:
             result_dict = {}
@@ -162,7 +161,7 @@ class HashtagSpider1Spider(scrapy.Spider):
             hashtag_df.drop_duplicates(inplace=True)
             for ht in hashtag_df['hashtag_name'].unique():
                 df_to_save = hashtag_df.loc[hashtag_df['hashtag_name'] == ht]
-                results_hashtag_path = f'results/{ht}/{self.today_date}/'
+                results_hashtag_path = f'results/{ht}/'
                 if not os.path.exists(results_hashtag_path):
                     os.makedirs(results_hashtag_path)
                 df_to_save.reset_index(inplace=True, drop=True)
