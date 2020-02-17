@@ -7,7 +7,7 @@ How to use:
 	3.In your command line navigate to "instagram_parser_2020" folder and type: scrapy crawl hashtag_spider_1 
 	- wait for [scrapy.core.engine] INFO: Closing spider (finished) message
 	- check instagram_parser_2020/results/"your hashtag name"/"your hashtag filename.csv"
-	4.To Get profiles from scraped hashtags run command: scrapy crawl get_user_urls_spider_1
+	4.To Get profiles from scraped hashtags run command: scrapy crawl user_profile_spider_1
 	- wait for [scrapy.core.engine] INFO: Closing spider (finished) message
 	- check instagram_parser_2020/results/"your hashtag name"/profiles/"your hashtag filename.csv"
 	
