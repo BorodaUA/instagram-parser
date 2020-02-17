@@ -29,10 +29,11 @@ class HashtagSpider1Spider(scrapy.Spider):
         except FileNotFoundError:
             print('Please provide hashtags_to_parse.txt in the project folder')
     
-    
+    @inline_requests
     def parse(self, response):
         dict_response = json.loads(response.body_as_unicode())
         hashtag_name = dict_response['graphql']['hashtag']['name']
+        
         top_posts = dict_response['graphql']['hashtag']['edge_hashtag_to_top_posts']['edges']
         for user in top_posts:
             result_dict = {}
@@ -40,11 +41,22 @@ class HashtagSpider1Spider(scrapy.Spider):
             result_dict['hashtag_name'] = dict_response['graphql']['hashtag']['name']
             result_dict['owner_id'] = user['node']['owner']['id']
             result_dict['short_code'] = short_code
+            ###
+            get_media_url = f'https://www.instagram.com/p/{short_code}/?__a=1'
+            result_dict['media_url'] = get_media_url
+            ###
+            raw_json = yield Request(url=get_media_url, dont_filter=True)
+            dict_url = json.loads(raw_json.body_as_unicode())
+            user_url = dict_url['graphql']['shortcode_media']['owner']['username']
+            result_dict['user_url'] =  user_url
+            ###
+            result_dict['full_user_url'] = f'https://www.instagram.com/{user_url}/'
+            ###
             result_dict['likes_count'] = user['node']['edge_liked_by']['count']
             result_dict['comments_count'] = user['node']['edge_media_to_comment']['count']
             result_dict['post_description'] = user['node']['edge_media_to_caption']['edges'][0]['node']['text']
-            self.result_lst.append(result_dict)
-        
+            if result_dict not in self.result_lst:
+                self.result_lst.append(result_dict)
         
         newest_posts = dict_response['graphql']['hashtag']['edge_hashtag_to_media']['edges']
         for user in newest_posts:
@@ -53,10 +65,22 @@ class HashtagSpider1Spider(scrapy.Spider):
             result_dict['hashtag_name'] = dict_response['graphql']['hashtag']['name']
             result_dict['owner_id'] = user['node']['owner']['id']
             result_dict['short_code'] = short_code
+            ###
+            get_media_url = f'https://www.instagram.com/p/{short_code}/?__a=1'
+            result_dict['media_url'] = get_media_url
+            ###
+            raw_json = yield Request(url=get_media_url, dont_filter=True)
+            dict_url = json.loads(raw_json.body_as_unicode())
+            user_url = dict_url['graphql']['shortcode_media']['owner']['username']
+            result_dict['user_url'] =  user_url
+            ###
+            result_dict['full_user_url'] = f'https://www.instagram.com/{user_url}/'
+            ###
             result_dict['likes_count'] = user['node']['edge_liked_by']['count']
             result_dict['comments_count'] = user['node']['edge_media_to_comment']['count']
             result_dict['post_description'] = user['node']['edge_media_to_caption']['edges'][0]['node']['text']
-            self.result_lst.append(result_dict)
+            if result_dict not in self.result_lst:
+                self.result_lst.append(result_dict)
 
         next_page = dict_response['graphql']['hashtag']['edge_hashtag_to_media']['page_info']['has_next_page']
         end_cursor = dict_response['graphql']['hashtag']['edge_hashtag_to_media']['page_info']['end_cursor']
@@ -71,14 +95,13 @@ class HashtagSpider1Spider(scrapy.Spider):
         cooler_params = urllib.parse.urlencode(params)
         next_tags_url = f'https://www.instagram.com/graphql/query/?{cooler_params}'
         
-        #if next_page == True:
         yield Request(
             url=next_tags_url,
             method='GET',
             callback=self.next_hashtags,
         )
        
-
+    @inline_requests
     def next_hashtags(self, response):
         dict_response = json.loads(response.body_as_unicode())
        
@@ -89,13 +112,25 @@ class HashtagSpider1Spider(scrapy.Spider):
             result_dict['hashtag_name'] = dict_response['data']['hashtag']['name']
             result_dict['owner_id'] = user['node']['owner']['id']
             result_dict['short_code'] = short_code
+            ###
+            get_media_url = f'https://www.instagram.com/p/{short_code}/?__a=1'
+            result_dict['media_url'] = get_media_url
+            ###
+            raw_json = yield Request(url=get_media_url, dont_filter=True)
+            dict_url = json.loads(raw_json.body_as_unicode())
+            user_url = dict_url['graphql']['shortcode_media']['owner']['username']
+            result_dict['user_url'] =  user_url
+            ###
+            result_dict['full_user_url'] = f'https://www.instagram.com/{user_url}/'
+            ###
             result_dict['likes_count'] = user['node']['edge_liked_by']['count']
             result_dict['comments_count'] = user['node']['edge_media_to_comment']['count']
             try:
                 result_dict['post_description'] = user['node']['edge_media_to_caption']['edges'][0]['node']['text']
             except IndexError:
                 result_dict['post_description'] = None
-            self.result_lst.append(result_dict)
+            if result_dict not in self.result_lst:
+                self.result_lst.append(result_dict)
 
             
         next_page = dict_response['data']['hashtag']['edge_hashtag_to_media']['page_info']['has_next_page']
@@ -119,16 +154,18 @@ class HashtagSpider1Spider(scrapy.Spider):
 
         if next_page != False:
             yield get_next_tags_request
-
-        hashtag_df = pd.DataFrame(self.result_lst)
-        hashtag_df['owner_id'] = hashtag_df['owner_id'].astype('int64')
-        hashtag_df['hashtag_name'] = hashtag_df['hashtag_name'].astype('category')
-        hashtag_df.drop_duplicates(inplace=True)
-        for ht in hashtag_df['hashtag_name'].unique():
-            df_to_save = hashtag_df.loc[hashtag_df['hashtag_name'] == ht]
-            results_hashtag_path = f'results/{ht}/{self.today_date}/'
-            if not os.path.exists(results_hashtag_path):
-                os.makedirs(results_hashtag_path)
-            df_to_save.to_csv(f'{results_hashtag_path}{ht}.csv', index=True, header=True)
+        
+        if next_page == False:
+            hashtag_df = pd.DataFrame(self.result_lst)
+            hashtag_df['owner_id'] = hashtag_df['owner_id'].astype('int64')
+            hashtag_df['hashtag_name'] = hashtag_df['hashtag_name'].astype('category')
+            hashtag_df.drop_duplicates(inplace=True)
+            for ht in hashtag_df['hashtag_name'].unique():
+                df_to_save = hashtag_df.loc[hashtag_df['hashtag_name'] == ht]
+                results_hashtag_path = f'results/{ht}/{self.today_date}/'
+                if not os.path.exists(results_hashtag_path):
+                    os.makedirs(results_hashtag_path)
+                df_to_save.reset_index(inplace=True, drop=True)
+                df_to_save.to_csv(f'{results_hashtag_path}{ht}.csv', index=True, header=True)
 
     
