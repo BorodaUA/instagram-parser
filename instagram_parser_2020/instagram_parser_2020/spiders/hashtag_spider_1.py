@@ -37,6 +37,7 @@ class HashtagSpider1Spider(scrapy.Spider):
             result_dict = {}
             result_dict['hashtag_name'] = dict_response['graphql']['hashtag']['name']
             result_dict['owner_id'] = user['node']['owner']['id']
+            result_dict['short_code'] = user['node']['shortcode']
             result_dict['likes_count'] = user['node']['edge_liked_by']['count']
             result_dict['comments_count'] = user['node']['edge_media_to_comment']['count']
             result_dict['post_description'] = user['node']['edge_media_to_caption']['edges'][0]['node']['text']
@@ -48,6 +49,7 @@ class HashtagSpider1Spider(scrapy.Spider):
             result_dict = {}
             result_dict['hashtag_name'] = dict_response['graphql']['hashtag']['name']
             result_dict['owner_id'] = user['node']['owner']['id']
+            result_dict['short_code'] = user['node']['shortcode']
             result_dict['likes_count'] = user['node']['edge_liked_by']['count']
             result_dict['comments_count'] = user['node']['edge_media_to_comment']['count']
             result_dict['post_description'] = user['node']['edge_media_to_caption']['edges'][0]['node']['text']
@@ -66,17 +68,17 @@ class HashtagSpider1Spider(scrapy.Spider):
         cooler_params = urllib.parse.urlencode(params)
         next_tags_url = f'https://www.instagram.com/graphql/query/?{cooler_params}'
         
-        if next_page == False:
-            results_hashtag_path = f'results/{hashtag_name}/{self.today_date}/'
-            if not os.path.exists(results_hashtag_path):
-                os.makedirs(results_hashtag_path)
+        #if next_page == False:
+            # results_hashtag_path = f'results/{hashtag_name}/{self.today_date}/'
+            # if not os.path.exists(results_hashtag_path):
+            #     os.makedirs(results_hashtag_path)
 
-            hashtag_df = pd.DataFrame(self.result_lst)
-            hashtag_df['owner_id'] = hashtag_df['owner_id'].astype('int64')
-            hashtag_df['hashtag_name'] = hashtag_df['hashtag_name'].astype('category')
-            hashtag_df.drop_duplicates(inplace=True)
-            hashtag_df.to_csv(f'{results_hashtag_path}{hashtag_name}.csv', index=True, header=True)
-        elif next_page == True:
+            # hashtag_df = pd.DataFrame(result_lst)
+            # hashtag_df['owner_id'] = hashtag_df['owner_id'].astype('int64')
+            # hashtag_df['hashtag_name'] = hashtag_df['hashtag_name'].astype('category')
+            # hashtag_df.drop_duplicates(inplace=True)
+            # hashtag_df.to_csv(f'{results_hashtag_path}{hashtag_name}.csv', index=True, header=True)
+        if next_page == True:
             yield Request(
                 url=next_tags_url,
                 method='GET',
@@ -93,6 +95,7 @@ class HashtagSpider1Spider(scrapy.Spider):
             result_dict = {}
             result_dict['hashtag_name'] = dict_response['data']['hashtag']['name']
             result_dict['owner_id'] = user['node']['owner']['id']
+            result_dict['short_code'] = user['node']['shortcode']
             result_dict['likes_count'] = user['node']['edge_liked_by']['count']
             result_dict['comments_count'] = user['node']['edge_media_to_comment']['count']
             try:
@@ -125,13 +128,14 @@ class HashtagSpider1Spider(scrapy.Spider):
             yield get_next_tags_request
 
         elif next_page == False:
-            results_hashtag_path = f'results/{hashtag_name}/{self.today_date}/'
-            if not os.path.exists(results_hashtag_path):
-                os.makedirs(results_hashtag_path)
-            
             hashtag_df = pd.DataFrame(self.result_lst)
             hashtag_df['owner_id'] = hashtag_df['owner_id'].astype('int64')
             hashtag_df['hashtag_name'] = hashtag_df['hashtag_name'].astype('category')
             hashtag_df.drop_duplicates(inplace=True)
-            hashtag_df.to_csv(f'{results_hashtag_path}{hashtag_name}.csv', index=True, header=True)
+            for ht in hashtag_df['hashtag_name'].unique():
+                df_to_save = hashtag_df.loc[hashtag_df['hashtag_name'] == ht]
+                results_hashtag_path = f'results/{ht}/{self.today_date}/'
+                if not os.path.exists(results_hashtag_path):
+                    os.makedirs(results_hashtag_path)
+                df_to_save.to_csv(f'{results_hashtag_path}{ht}.csv', index=True, header=True)
   
