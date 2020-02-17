@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-import scrapy
-import os
-from scrapy.http import Request
-from scrapy.utils.response import open_in_browser
 import json
-import pandas as pd
+import os
 import urllib
 from datetime import date
+
+import pandas as pd
+import scrapy
+from scrapy.http import Request
+from scrapy.utils.response import open_in_browser
 
 
 class HashtagSpider1Spider(scrapy.Spider):
@@ -68,16 +69,6 @@ class HashtagSpider1Spider(scrapy.Spider):
         cooler_params = urllib.parse.urlencode(params)
         next_tags_url = f'https://www.instagram.com/graphql/query/?{cooler_params}'
         
-        #if next_page == False:
-            # results_hashtag_path = f'results/{hashtag_name}/{self.today_date}/'
-            # if not os.path.exists(results_hashtag_path):
-            #     os.makedirs(results_hashtag_path)
-
-            # hashtag_df = pd.DataFrame(result_lst)
-            # hashtag_df['owner_id'] = hashtag_df['owner_id'].astype('int64')
-            # hashtag_df['hashtag_name'] = hashtag_df['hashtag_name'].astype('category')
-            # hashtag_df.drop_duplicates(inplace=True)
-            # hashtag_df.to_csv(f'{results_hashtag_path}{hashtag_name}.csv', index=True, header=True)
         if next_page == True:
             yield Request(
                 url=next_tags_url,
@@ -85,7 +76,6 @@ class HashtagSpider1Spider(scrapy.Spider):
                 callback=self.next_hashtags,
             )
        
-
 
     def next_hashtags(self, response):
         dict_response = json.loads(response.body_as_unicode())
@@ -138,4 +128,3 @@ class HashtagSpider1Spider(scrapy.Spider):
                 if not os.path.exists(results_hashtag_path):
                     os.makedirs(results_hashtag_path)
                 df_to_save.to_csv(f'{results_hashtag_path}{ht}.csv', index=True, header=True)
-  
