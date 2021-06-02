@@ -1,4 +1,4 @@
 ﻿pandas==0.25.3
 Scrapy==1.6.0
 scrapy-inline-requests==0.3.1
-urllib3==1.25.8
+urllib3==1.26.5
